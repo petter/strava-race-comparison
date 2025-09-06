@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { StravaAPI, extractActivityIdFromUrl } from '../lib/strava-api';
-import { Activity } from '../types/strava';
+import { useState } from "react";
+import { StravaAPI, extractActivityIdFromUrl } from "../lib/strava-api";
+import { Activity } from "../types/strava";
 
 interface ActivityInputProps {
   onActivityAdded: (activity: Activity) => void;
@@ -11,38 +11,40 @@ interface ActivityInputProps {
   onAuthRequired: () => void;
 }
 
-export default function ActivityInput({ 
-  onActivityAdded, 
-  onError, 
+export default function ActivityInput({
+  onActivityAdded,
+  onError,
   isAuthenticated,
-  onAuthRequired 
+  onAuthRequired,
 }: ActivityInputProps) {
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isAuthenticated) {
       onAuthRequired();
       return;
     }
 
     if (!url.trim()) {
-      onError('Please enter a Strava activity URL');
+      onError("Please enter a Strava activity URL");
       return;
     }
 
     const activityId = extractActivityIdFromUrl(url.trim());
     if (!activityId) {
-      onError('Invalid Strava activity URL. Please use a URL like: https://www.strava.com/activities/123456789');
+      onError(
+        "Invalid Strava activity URL. Please use a URL like: https://www.strava.com/activities/123456789"
+      );
       return;
     }
 
     setLoading(true);
-    
+
     try {
-      const tokens = JSON.parse(localStorage.getItem('strava_tokens') || '{}');
+      const tokens = JSON.parse(localStorage.getItem("strava_tokens") || "{}");
       if (!tokens.access_token) {
         onAuthRequired();
         return;
@@ -50,18 +52,18 @@ export default function ActivityInput({
 
       const stravaAPI = new StravaAPI(tokens.access_token);
       const activity = await stravaAPI.getActivityWithStreams(activityId);
-      
+
       onActivityAdded(activity);
-      setUrl(''); // Clear the input after successful addition
+      setUrl(""); // Clear the input after successful addition
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message.includes('Unauthorized')) {
+        if (error.message.includes("Unauthorized")) {
           onAuthRequired();
         } else {
           onError(error.message);
         }
       } else {
-        onError('Failed to fetch activity data');
+        onError("Failed to fetch activity data");
       }
     } finally {
       setLoading(false);
@@ -81,7 +83,7 @@ export default function ActivityInput({
             disabled={loading}
           />
         </div>
-        
+
         <button
           type="submit"
           disabled={loading || !url.trim()}
@@ -95,7 +97,11 @@ export default function ActivityInput({
           ) : (
             <>
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
               </svg>
               Add Activity
             </>
@@ -105,7 +111,8 @@ export default function ActivityInput({
 
       {!isAuthenticated && (
         <p className="text-sm text-amber-600 mt-2">
-          ⚠️ You need to authenticate with Strava to add activities. Click "Add Activity" to sign in.
+          ⚠️ You need to authenticate with Strava to add activities. Click
+          &quot;Add Activity&quot; to sign in.
         </p>
       )}
     </div>

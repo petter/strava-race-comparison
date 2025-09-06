@@ -1,4 +1,4 @@
-import { Activity, ActivityPoint } from '../types/strava';
+import { Activity, ActivityPoint } from "../types/strava";
 
 export interface GPXTrackPoint {
   lat: number;
@@ -7,49 +7,52 @@ export interface GPXTrackPoint {
   time?: Date;
 }
 
-export function parseGPX(gpxContent: string, athleteName: string = 'GPX Upload'): Activity {
+export function parseGPX(
+  gpxContent: string,
+  athleteName: string = "GPX Upload"
+): Activity {
   const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(gpxContent, 'text/xml');
-  
+  const xmlDoc = parser.parseFromString(gpxContent, "text/xml");
+
   // Check for parsing errors
-  const parseError = xmlDoc.querySelector('parsererror');
+  const parseError = xmlDoc.querySelector("parsererror");
   if (parseError) {
-    throw new Error('Invalid GPX file format');
+    throw new Error("Invalid GPX file format");
   }
 
   const trackPoints: GPXTrackPoint[] = [];
-  const trkpts = xmlDoc.querySelectorAll('trkpt');
-  
+  const trkpts = xmlDoc.querySelectorAll("trkpt");
+
   if (trkpts.length === 0) {
-    throw new Error('No track points found in GPX file');
+    throw new Error("No track points found in GPX file");
   }
 
   // Extract track points
-  trkpts.forEach(trkpt => {
-    const lat = parseFloat(trkpt.getAttribute('lat') || '0');
-    const lng = parseFloat(trkpt.getAttribute('lon') || '0');
-    
+  trkpts.forEach((trkpt) => {
+    const lat = parseFloat(trkpt.getAttribute("lat") || "0");
+    const lng = parseFloat(trkpt.getAttribute("lon") || "0");
+
     if (lat === 0 && lng === 0) return;
 
     const point: GPXTrackPoint = { lat, lng };
-    
+
     // Extract elevation
-    const eleElement = trkpt.querySelector('ele');
+    const eleElement = trkpt.querySelector("ele");
     if (eleElement) {
-      point.ele = parseFloat(eleElement.textContent || '0');
+      point.ele = parseFloat(eleElement.textContent || "0");
     }
 
     // Extract time
-    const timeElement = trkpt.querySelector('time');
+    const timeElement = trkpt.querySelector("time");
     if (timeElement) {
-      point.time = new Date(timeElement.textContent || '');
+      point.time = new Date(timeElement.textContent || "");
     }
 
     trackPoints.push(point);
   });
 
   if (trackPoints.length === 0) {
-    throw new Error('No valid track points found in GPX file');
+    throw new Error("No valid track points found in GPX file");
   }
 
   // Convert to Activity format
@@ -59,7 +62,6 @@ export function parseGPX(gpxContent: string, athleteName: string = 'GPX Upload')
 
   trackPoints.forEach((point, index) => {
     let time = 0;
-    let distance = 0;
 
     // Calculate time from start
     if (point.time && startTime) {
@@ -73,8 +75,10 @@ export function parseGPX(gpxContent: string, athleteName: string = 'GPX Upload')
     if (index > 0) {
       const prevPoint = trackPoints[index - 1];
       const segmentDistance = calculateDistance(
-        prevPoint.lat, prevPoint.lng,
-        point.lat, point.lng
+        prevPoint.lat,
+        prevPoint.lng,
+        point.lat,
+        point.lng
       );
       totalDistance += segmentDistance;
     }
@@ -84,17 +88,28 @@ export function parseGPX(gpxContent: string, athleteName: string = 'GPX Upload')
       lng: point.lng,
       time,
       distance: totalDistance,
-      elevation: point.ele
+      elevation: point.ele,
     });
   });
 
   // Extract activity name from GPX metadata
-  const nameElement = xmlDoc.querySelector('name');
-  const activityName = nameElement?.textContent || 'GPX Activity';
+  const nameElement = xmlDoc.querySelector("name");
+  const activityName = nameElement?.textContent || "GPX Activity";
 
   // Generate unique ID and color
-  const activityId = `gpx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#F7DC6F', '#BB8FCE', '#85C1E9', '#F8C471', '#82E0AA'];
+  const activityId = `gpx_${Date.now()}_${Math.random()
+    .toString(36)
+    .substr(2, 9)}`;
+  const colors = [
+    "#FF6B6B",
+    "#4ECDC4",
+    "#45B7D1",
+    "#F7DC6F",
+    "#BB8FCE",
+    "#85C1E9",
+    "#F8C471",
+    "#82E0AA",
+  ];
   const colorIndex = Math.floor(Math.random() * colors.length);
 
   const totalTime = points.length > 0 ? points[points.length - 1].time : 0;
@@ -105,25 +120,33 @@ export function parseGPX(gpxContent: string, athleteName: string = 'GPX Upload')
     athlete: {
       id: `gpx_${Date.now()}`,
       name: athleteName,
-      color: colors[colorIndex]
+      color: colors[colorIndex],
     },
     points,
     totalDistance,
     totalTime,
-    startTime: startTime.toISOString()
+    startTime: startTime.toISOString(),
   };
 }
 
 // Calculate distance between two lat/lng points using Haversine formula
-function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+function calculateDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
   const R = 6371000; // Earth's radius in meters
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
-  
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
