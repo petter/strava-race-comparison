@@ -155,7 +155,12 @@ export class StravaAPI {
     }
 
     // Generate a color based on athlete ID for consistency
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#F7DC6F', '#BB8FCE', '#85C1E9', '#F8C471', '#82E0AA'];
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#F7DC6F', '#BB8FCE', '#85C1E9', '#F8C471', '#82E0AA',
+      '#E74C3C', '#3498DB', '#9B59B6', '#F39C12', '#E67E22', '#1ABC9C', '#2ECC71', '#34495E',
+      '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#00BCD4', '#009688', '#4CAF50',
+      '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#607D8B'
+    ];
     const colorIndex = stravaActivity.athlete.id % colors.length;
 
     // Handle athlete name more robustly

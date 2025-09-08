@@ -1,6 +1,7 @@
 'use client';
 
 import { Activity } from '../types/strava';
+import { getCurrentActivityStats } from '../lib/speed-calculator';
 
 interface ActivityPanelProps {
   activities: Activity[];
@@ -8,39 +9,6 @@ interface ActivityPanelProps {
 }
 
 export default function ActivityPanel({ activities, currentTime }: ActivityPanelProps) {
-  const getCurrentStats = (activity: Activity) => {
-    // Find current position and stats
-    const points = activity.points;
-    if (points.length === 0) return null;
-
-    let currentPoint = points[0];
-    for (let i = 0; i < points.length - 1; i++) {
-      if (currentTime >= points[i].time && currentTime <= points[i + 1].time) {
-        const progress = (currentTime - points[i].time) / (points[i + 1].time - points[i].time);
-        currentPoint = {
-          ...points[i],
-          distance: points[i].distance ? 
-            points[i].distance! + (points[i + 1].distance! - points[i].distance!) * progress : 
-            0,
-          time: currentTime
-        };
-        break;
-      } else if (currentTime > points[i + 1].time) {
-        currentPoint = points[i + 1];
-      }
-    }
-
-    const currentDistance = currentPoint.distance || 0;
-    const currentSpeed = currentTime > 0 ? (currentDistance / currentTime) * 3.6 : 0; // km/h
-    const progressPercent = (currentDistance / activity.totalDistance) * 100;
-
-    return {
-      distance: currentDistance,
-      speed: currentSpeed,
-      progress: progressPercent,
-      timeElapsed: currentTime
-    };
-  };
 
   const formatDistance = (meters: number): string => {
     if (meters < 1000) return `${Math.round(meters)}m`;
@@ -59,8 +27,8 @@ export default function ActivityPanel({ activities, currentTime }: ActivityPanel
 
   // Sort activities by current distance (leader first)
   const sortedActivities = [...activities].sort((a, b) => {
-    const statsA = getCurrentStats(a);
-    const statsB = getCurrentStats(b);
+    const statsA = getCurrentActivityStats(a, currentTime);
+    const statsB = getCurrentActivityStats(b, currentTime);
     if (!statsA || !statsB) return 0;
     return statsB.distance - statsA.distance;
   });
@@ -80,7 +48,7 @@ export default function ActivityPanel({ activities, currentTime }: ActivityPanel
       ) : (
         <div className="space-y-4">
           {sortedActivities.map((activity, index) => {
-          const stats = getCurrentStats(activity);
+          const stats = getCurrentActivityStats(activity, currentTime);
           if (!stats) return null;
 
           const isLeader = index === 0;

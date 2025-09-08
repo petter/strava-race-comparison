@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { Activity, ActivityPoint } from '../types/strava';
+import { getCurrentActivityStats, formatSpeed, formatPace } from '../lib/speed-calculator';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -105,11 +106,23 @@ export default function MapComponent({ activities, currentTime, isPlaying, isFul
         const el = document.createElement('div');
         el.className = 'marker';
         el.style.backgroundColor = activity.athlete.color;
-        el.style.width = '12px';
-        el.style.height = '12px';
+        el.style.width = '24px';
+        el.style.height = '24px';
         el.style.borderRadius = '50%';
         el.style.border = '2px solid white';
         el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.fontSize = '10px';
+        el.style.fontWeight = 'bold';
+        el.style.color = 'white';
+        el.style.textShadow = '0 1px 1px rgba(0,0,0,0.5)';
+        el.style.cursor = 'pointer';
+        
+        // Get initials from athlete name
+        const initials = getInitials(activity.athlete.name);
+        el.textContent = initials;
 
         markers.current[activity.id] = new mapboxgl.Marker(el)
           .setLngLat([activity.points[0].lng, activity.points[0].lat])
@@ -176,7 +189,7 @@ export default function MapComponent({ activities, currentTime, isPlaying, isFul
           <div className="space-y-3 max-h-72 overflow-y-auto">
             {activities
               .map(activity => {
-                const currentStats = getCurrentPositionStats(activity, currentTime);
+                const currentStats = getCurrentActivityStats(activity, currentTime);
                 return { activity, stats: currentStats };
               })
               .sort((a, b) => (b.stats?.distance || 0) - (a.stats?.distance || 0))
@@ -230,49 +243,23 @@ export default function MapComponent({ activities, currentTime, isPlaying, isFul
   );
 }
 
-// Helper function to get current position stats for fullscreen overlay
-function getCurrentPositionStats(activity: Activity, currentTime: number) {
-  const currentPoint = getCurrentPosition(activity.points, currentTime);
-  if (!currentPoint) return null;
 
-  // Calculate current speed based on recent movement
-  const points = activity.points;
-  let speed = 0;
+// Helper function to get initials from a name
+function getInitials(name: string): string {
+  if (!name || name === 'Unknown Athlete') return '?';
   
-  // Find the segment this point is in and calculate speed
-  for (let i = 0; i < points.length - 1; i++) {
-    if (currentTime >= points[i].time && currentTime <= points[i + 1].time) {
-      const timeDiff = points[i + 1].time - points[i].time;
-      const distDiff = (points[i + 1].distance || 0) - (points[i].distance || 0);
-      if (timeDiff > 0) {
-        speed = (distDiff / timeDiff) * 3.6; // Convert m/s to km/h
-      }
-      break;
-    }
+  const words = name.trim().split(/\s+/);
+  if (words.length === 1) {
+    // Single word, take first two characters
+    return words[0].substring(0, 2).toUpperCase();
   }
-
-  return {
-    distance: currentPoint.distance || 0,
-    lat: currentPoint.lat,
-    lng: currentPoint.lng,
-    speed: speed
-  };
-}
-
-// Format speed as km/h
-function formatSpeed(speed: number): string {
-  return `${speed.toFixed(1)} km/h`;
-}
-
-// Format pace as min/km
-function formatPace(speed: number): string {
-  if (speed <= 0) return '--:--';
   
-  const paceMinutesPerKm = 60 / speed; // minutes per km
-  const minutes = Math.floor(paceMinutesPerKm);
-  const seconds = Math.round((paceMinutesPerKm - minutes) * 60);
-  
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  // Multiple words, take first letter of each (up to 2)
+  return words
+    .slice(0, 2)
+    .map(word => word.charAt(0))
+    .join('')
+    .toUpperCase();
 }
 
 // Helper function to get current position based on time
