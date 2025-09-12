@@ -22,8 +22,8 @@ export default function Home() {
   const [error, setError] = useState<string>("");
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const animationRef = useRef<number>();
-  const lastTimeRef = useRef<number>();
+  const animationRef = useRef<number>(null);
+  const lastTimeRef = useRef<number>(null);
 
   // Check authentication status on mount
   useEffect(() => {
@@ -100,7 +100,7 @@ export default function Home() {
       ...prev,
       isPlaying: !prev.isPlaying,
     }));
-    lastTimeRef.current = undefined;
+    lastTimeRef.current = null;
   };
 
   const handleSeek = (time: number) => {
@@ -123,7 +123,7 @@ export default function Home() {
       currentTime: 0,
       isPlaying: false,
     }));
-    lastTimeRef.current = undefined;
+    lastTimeRef.current = null;
   };
 
   const handleActivityAdded = (activity: Activity) => {
